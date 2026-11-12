@@ -39,6 +39,7 @@ Configure how the resource is exposed in the REST API.
    * delete
    * related
    * route
+ * [open_api](#rest-open_api)
 
 
 ### Examples
@@ -135,7 +136,13 @@ get :by_slug, route: "/by-slug/:slug", name: "post.by_slug"
 |------|------|---------|------|
 | [`route`](#rest-routes-get-route){: #rest-routes-get-route } | `String.t` | `"/:id"` | The path of the route, relative to `base`. May contain `:param` segments, e.g. `"/:id/archive"`. |
 | [`name`](#rest-routes-get-name){: #rest-routes-get-name } | `String.t` |  | The entrypoint name of the route. Must be unique per resource. Defaults to `"<type>.<route kind>"`, e.g. `"post.get"`. |
-| [`description`](#rest-routes-get-description){: #rest-routes-get-description } | `String.t` |  | A description of the route for generated docs. Defaults to the action description. |
+| [`description`](#rest-routes-get-description){: #rest-routes-get-description } | `String.t` |  | The OpenAPI operation description (markdown). Defaults to the action's `description`. |
+| [`summary`](#rest-routes-get-summary){: #rest-routes-get-summary } | `String.t` |  | The OpenAPI operation summary, a short one-line title. Defaults to a generated one, e.g. `"Fetch a post"`. |
+| [`request_body_description`](#rest-routes-get-request_body_description){: #rest-routes-get-request_body_description } | `String.t` |  | The OpenAPI description of the request body, for routes that accept one. |
+| [`response_description`](#rest-routes-get-response_description){: #rest-routes-get-response_description } | `String.t` |  | The OpenAPI description of the success response. Defaults to a generated one, e.g. `"The created record."`. |
+| [`parameter_descriptions`](#rest-routes-get-parameter_descriptions){: #rest-routes-get-parameter_descriptions } | `list({atom, String.t})` | `[]` | OpenAPI descriptions of path parameters and `query_params`, e.g. `[id: "The post's UUID"]`. Query parameters default to the input's `description`. |
+| [`tags`](#rest-routes-get-tags){: #rest-routes-get-tags } | `list(String.t)` |  | The OpenAPI tags of the operation. Defaults to the resource's `open_api.tag`. |
+| [`deprecated?`](#rest-routes-get-deprecated?){: #rest-routes-get-deprecated? } | `boolean` | `false` | Whether the OpenAPI operation is marked as deprecated. |
 | [`primary?`](#rest-routes-get-primary?){: #rest-routes-get-primary? } | `boolean` | `false` | Whether this is the route to link to by default for this kind of route. |
 | [`query_params`](#rest-routes-get-query_params){: #rest-routes-get-query_params } | `list(atom)` | `[]` | Action inputs (arguments or accepted attributes) to read from the query string. |
 | [`metadata`](#rest-routes-get-metadata){: #rest-routes-get-metadata } | `(any, any, any -> any)` |  | A function `fn subject, result, request -> map end` returning extra top-level metadata. |
@@ -184,7 +191,13 @@ index :read, paginate?: false
 | [`paginate?`](#rest-routes-index-paginate?){: #rest-routes-index-paginate? } | `boolean` | `true` | Whether to paginate the results when the read action supports pagination. |
 | [`route`](#rest-routes-index-route){: #rest-routes-index-route } | `String.t` | `"/"` | The path of the route, relative to `base`. May contain `:param` segments, e.g. `"/:id/archive"`. |
 | [`name`](#rest-routes-index-name){: #rest-routes-index-name } | `String.t` |  | The entrypoint name of the route. Must be unique per resource. Defaults to `"<type>.<route kind>"`, e.g. `"post.get"`. |
-| [`description`](#rest-routes-index-description){: #rest-routes-index-description } | `String.t` |  | A description of the route for generated docs. Defaults to the action description. |
+| [`description`](#rest-routes-index-description){: #rest-routes-index-description } | `String.t` |  | The OpenAPI operation description (markdown). Defaults to the action's `description`. |
+| [`summary`](#rest-routes-index-summary){: #rest-routes-index-summary } | `String.t` |  | The OpenAPI operation summary, a short one-line title. Defaults to a generated one, e.g. `"Fetch a post"`. |
+| [`request_body_description`](#rest-routes-index-request_body_description){: #rest-routes-index-request_body_description } | `String.t` |  | The OpenAPI description of the request body, for routes that accept one. |
+| [`response_description`](#rest-routes-index-response_description){: #rest-routes-index-response_description } | `String.t` |  | The OpenAPI description of the success response. Defaults to a generated one, e.g. `"The created record."`. |
+| [`parameter_descriptions`](#rest-routes-index-parameter_descriptions){: #rest-routes-index-parameter_descriptions } | `list({atom, String.t})` | `[]` | OpenAPI descriptions of path parameters and `query_params`, e.g. `[id: "The post's UUID"]`. Query parameters default to the input's `description`. |
+| [`tags`](#rest-routes-index-tags){: #rest-routes-index-tags } | `list(String.t)` |  | The OpenAPI tags of the operation. Defaults to the resource's `open_api.tag`. |
+| [`deprecated?`](#rest-routes-index-deprecated?){: #rest-routes-index-deprecated? } | `boolean` | `false` | Whether the OpenAPI operation is marked as deprecated. |
 | [`primary?`](#rest-routes-index-primary?){: #rest-routes-index-primary? } | `boolean` | `false` | Whether this is the route to link to by default for this kind of route. |
 | [`query_params`](#rest-routes-index-query_params){: #rest-routes-index-query_params } | `list(atom)` | `[]` | Action inputs (arguments or accepted attributes) to read from the query string. |
 | [`metadata`](#rest-routes-index-metadata){: #rest-routes-index-metadata } | `(any, any, any -> any)` |  | A function `fn subject, result, request -> map end` returning extra top-level metadata. |
@@ -228,7 +241,13 @@ post :create
 |------|------|---------|------|
 | [`route`](#rest-routes-post-route){: #rest-routes-post-route } | `String.t` | `"/"` | The path of the route, relative to `base`. May contain `:param` segments, e.g. `"/:id/archive"`. |
 | [`name`](#rest-routes-post-name){: #rest-routes-post-name } | `String.t` |  | The entrypoint name of the route. Must be unique per resource. Defaults to `"<type>.<route kind>"`, e.g. `"post.get"`. |
-| [`description`](#rest-routes-post-description){: #rest-routes-post-description } | `String.t` |  | A description of the route for generated docs. Defaults to the action description. |
+| [`description`](#rest-routes-post-description){: #rest-routes-post-description } | `String.t` |  | The OpenAPI operation description (markdown). Defaults to the action's `description`. |
+| [`summary`](#rest-routes-post-summary){: #rest-routes-post-summary } | `String.t` |  | The OpenAPI operation summary, a short one-line title. Defaults to a generated one, e.g. `"Fetch a post"`. |
+| [`request_body_description`](#rest-routes-post-request_body_description){: #rest-routes-post-request_body_description } | `String.t` |  | The OpenAPI description of the request body, for routes that accept one. |
+| [`response_description`](#rest-routes-post-response_description){: #rest-routes-post-response_description } | `String.t` |  | The OpenAPI description of the success response. Defaults to a generated one, e.g. `"The created record."`. |
+| [`parameter_descriptions`](#rest-routes-post-parameter_descriptions){: #rest-routes-post-parameter_descriptions } | `list({atom, String.t})` | `[]` | OpenAPI descriptions of path parameters and `query_params`, e.g. `[id: "The post's UUID"]`. Query parameters default to the input's `description`. |
+| [`tags`](#rest-routes-post-tags){: #rest-routes-post-tags } | `list(String.t)` |  | The OpenAPI tags of the operation. Defaults to the resource's `open_api.tag`. |
+| [`deprecated?`](#rest-routes-post-deprecated?){: #rest-routes-post-deprecated? } | `boolean` | `false` | Whether the OpenAPI operation is marked as deprecated. |
 | [`primary?`](#rest-routes-post-primary?){: #rest-routes-post-primary? } | `boolean` | `false` | Whether this is the route to link to by default for this kind of route. |
 | [`query_params`](#rest-routes-post-query_params){: #rest-routes-post-query_params } | `list(atom)` | `[]` | Action inputs (arguments or accepted attributes) to read from the query string. |
 | [`metadata`](#rest-routes-post-metadata){: #rest-routes-post-metadata } | `(any, any, any -> any)` |  | A function `fn subject, result, request -> map end` returning extra top-level metadata. |
@@ -276,7 +295,13 @@ patch :update, read_action: :read_for_update
 |------|------|---------|------|
 | [`route`](#rest-routes-patch-route){: #rest-routes-patch-route } | `String.t` | `"/:id"` | The path of the route, relative to `base`. May contain `:param` segments, e.g. `"/:id/archive"`. |
 | [`name`](#rest-routes-patch-name){: #rest-routes-patch-name } | `String.t` |  | The entrypoint name of the route. Must be unique per resource. Defaults to `"<type>.<route kind>"`, e.g. `"post.get"`. |
-| [`description`](#rest-routes-patch-description){: #rest-routes-patch-description } | `String.t` |  | A description of the route for generated docs. Defaults to the action description. |
+| [`description`](#rest-routes-patch-description){: #rest-routes-patch-description } | `String.t` |  | The OpenAPI operation description (markdown). Defaults to the action's `description`. |
+| [`summary`](#rest-routes-patch-summary){: #rest-routes-patch-summary } | `String.t` |  | The OpenAPI operation summary, a short one-line title. Defaults to a generated one, e.g. `"Fetch a post"`. |
+| [`request_body_description`](#rest-routes-patch-request_body_description){: #rest-routes-patch-request_body_description } | `String.t` |  | The OpenAPI description of the request body, for routes that accept one. |
+| [`response_description`](#rest-routes-patch-response_description){: #rest-routes-patch-response_description } | `String.t` |  | The OpenAPI description of the success response. Defaults to a generated one, e.g. `"The created record."`. |
+| [`parameter_descriptions`](#rest-routes-patch-parameter_descriptions){: #rest-routes-patch-parameter_descriptions } | `list({atom, String.t})` | `[]` | OpenAPI descriptions of path parameters and `query_params`, e.g. `[id: "The post's UUID"]`. Query parameters default to the input's `description`. |
+| [`tags`](#rest-routes-patch-tags){: #rest-routes-patch-tags } | `list(String.t)` |  | The OpenAPI tags of the operation. Defaults to the resource's `open_api.tag`. |
+| [`deprecated?`](#rest-routes-patch-deprecated?){: #rest-routes-patch-deprecated? } | `boolean` | `false` | Whether the OpenAPI operation is marked as deprecated. |
 | [`primary?`](#rest-routes-patch-primary?){: #rest-routes-patch-primary? } | `boolean` | `false` | Whether this is the route to link to by default for this kind of route. |
 | [`query_params`](#rest-routes-patch-query_params){: #rest-routes-patch-query_params } | `list(atom)` | `[]` | Action inputs (arguments or accepted attributes) to read from the query string. |
 | [`metadata`](#rest-routes-patch-metadata){: #rest-routes-patch-metadata } | `(any, any, any -> any)` |  | A function `fn subject, result, request -> map end` returning extra top-level metadata. |
@@ -321,7 +346,13 @@ delete :destroy
 |------|------|---------|------|
 | [`route`](#rest-routes-delete-route){: #rest-routes-delete-route } | `String.t` | `"/:id"` | The path of the route, relative to `base`. May contain `:param` segments, e.g. `"/:id/archive"`. |
 | [`name`](#rest-routes-delete-name){: #rest-routes-delete-name } | `String.t` |  | The entrypoint name of the route. Must be unique per resource. Defaults to `"<type>.<route kind>"`, e.g. `"post.get"`. |
-| [`description`](#rest-routes-delete-description){: #rest-routes-delete-description } | `String.t` |  | A description of the route for generated docs. Defaults to the action description. |
+| [`description`](#rest-routes-delete-description){: #rest-routes-delete-description } | `String.t` |  | The OpenAPI operation description (markdown). Defaults to the action's `description`. |
+| [`summary`](#rest-routes-delete-summary){: #rest-routes-delete-summary } | `String.t` |  | The OpenAPI operation summary, a short one-line title. Defaults to a generated one, e.g. `"Fetch a post"`. |
+| [`request_body_description`](#rest-routes-delete-request_body_description){: #rest-routes-delete-request_body_description } | `String.t` |  | The OpenAPI description of the request body, for routes that accept one. |
+| [`response_description`](#rest-routes-delete-response_description){: #rest-routes-delete-response_description } | `String.t` |  | The OpenAPI description of the success response. Defaults to a generated one, e.g. `"The created record."`. |
+| [`parameter_descriptions`](#rest-routes-delete-parameter_descriptions){: #rest-routes-delete-parameter_descriptions } | `list({atom, String.t})` | `[]` | OpenAPI descriptions of path parameters and `query_params`, e.g. `[id: "The post's UUID"]`. Query parameters default to the input's `description`. |
+| [`tags`](#rest-routes-delete-tags){: #rest-routes-delete-tags } | `list(String.t)` |  | The OpenAPI tags of the operation. Defaults to the resource's `open_api.tag`. |
+| [`deprecated?`](#rest-routes-delete-deprecated?){: #rest-routes-delete-deprecated? } | `boolean` | `false` | Whether the OpenAPI operation is marked as deprecated. |
 | [`primary?`](#rest-routes-delete-primary?){: #rest-routes-delete-primary? } | `boolean` | `false` | Whether this is the route to link to by default for this kind of route. |
 | [`query_params`](#rest-routes-delete-query_params){: #rest-routes-delete-query_params } | `list(atom)` | `[]` | Action inputs (arguments or accepted attributes) to read from the query string. |
 | [`metadata`](#rest-routes-delete-metadata){: #rest-routes-delete-metadata } | `(any, any, any -> any)` |  | A function `fn subject, result, request -> map end` returning extra top-level metadata. |
@@ -370,7 +401,13 @@ related :comments, :read
 |------|------|---------|------|
 | [`route`](#rest-routes-related-route){: #rest-routes-related-route } | `String.t` |  | The path of the route, relative to `base`. May contain `:param` segments, e.g. `"/:id/archive"`. -  Defaults to `"/:id/<relationship>"`. |
 | [`name`](#rest-routes-related-name){: #rest-routes-related-name } | `String.t` |  | The entrypoint name of the route. Must be unique per resource. Defaults to `"<type>.<route kind>"`, e.g. `"post.get"`. |
-| [`description`](#rest-routes-related-description){: #rest-routes-related-description } | `String.t` |  | A description of the route for generated docs. Defaults to the action description. |
+| [`description`](#rest-routes-related-description){: #rest-routes-related-description } | `String.t` |  | The OpenAPI operation description (markdown). Defaults to the action's `description`. |
+| [`summary`](#rest-routes-related-summary){: #rest-routes-related-summary } | `String.t` |  | The OpenAPI operation summary, a short one-line title. Defaults to a generated one, e.g. `"Fetch a post"`. |
+| [`request_body_description`](#rest-routes-related-request_body_description){: #rest-routes-related-request_body_description } | `String.t` |  | The OpenAPI description of the request body, for routes that accept one. |
+| [`response_description`](#rest-routes-related-response_description){: #rest-routes-related-response_description } | `String.t` |  | The OpenAPI description of the success response. Defaults to a generated one, e.g. `"The created record."`. |
+| [`parameter_descriptions`](#rest-routes-related-parameter_descriptions){: #rest-routes-related-parameter_descriptions } | `list({atom, String.t})` | `[]` | OpenAPI descriptions of path parameters and `query_params`, e.g. `[id: "The post's UUID"]`. Query parameters default to the input's `description`. |
+| [`tags`](#rest-routes-related-tags){: #rest-routes-related-tags } | `list(String.t)` |  | The OpenAPI tags of the operation. Defaults to the resource's `open_api.tag`. |
+| [`deprecated?`](#rest-routes-related-deprecated?){: #rest-routes-related-deprecated? } | `boolean` | `false` | Whether the OpenAPI operation is marked as deprecated. |
 | [`primary?`](#rest-routes-related-primary?){: #rest-routes-related-primary? } | `boolean` | `false` | Whether this is the route to link to by default for this kind of route. |
 | [`query_params`](#rest-routes-related-query_params){: #rest-routes-related-query_params } | `list(atom)` | `[]` | Action inputs (arguments or accepted attributes) to read from the query string. |
 | [`metadata`](#rest-routes-related-metadata){: #rest-routes-related-metadata } | `(any, any, any -> any)` |  | A function `fn subject, result, request -> map end` returning extra top-level metadata. |
@@ -423,7 +460,13 @@ route :get, "/stats", :stats, wrap_in_result?: true
 |------|------|---------|------|
 | [`wrap_in_result?`](#rest-routes-route-wrap_in_result?){: #rest-routes-route-wrap_in_result? } | `boolean` | `false` | Whether to wrap the action result as `{"result": <result>}`. |
 | [`name`](#rest-routes-route-name){: #rest-routes-route-name } | `String.t` |  | The entrypoint name of the route. Must be unique per resource. Defaults to `"<type>.<route kind>"`, e.g. `"post.get"`. |
-| [`description`](#rest-routes-route-description){: #rest-routes-route-description } | `String.t` |  | A description of the route for generated docs. Defaults to the action description. |
+| [`description`](#rest-routes-route-description){: #rest-routes-route-description } | `String.t` |  | The OpenAPI operation description (markdown). Defaults to the action's `description`. |
+| [`summary`](#rest-routes-route-summary){: #rest-routes-route-summary } | `String.t` |  | The OpenAPI operation summary, a short one-line title. Defaults to a generated one, e.g. `"Fetch a post"`. |
+| [`request_body_description`](#rest-routes-route-request_body_description){: #rest-routes-route-request_body_description } | `String.t` |  | The OpenAPI description of the request body, for routes that accept one. |
+| [`response_description`](#rest-routes-route-response_description){: #rest-routes-route-response_description } | `String.t` |  | The OpenAPI description of the success response. Defaults to a generated one, e.g. `"The created record."`. |
+| [`parameter_descriptions`](#rest-routes-route-parameter_descriptions){: #rest-routes-route-parameter_descriptions } | `list({atom, String.t})` | `[]` | OpenAPI descriptions of path parameters and `query_params`, e.g. `[id: "The post's UUID"]`. Query parameters default to the input's `description`. |
+| [`tags`](#rest-routes-route-tags){: #rest-routes-route-tags } | `list(String.t)` |  | The OpenAPI tags of the operation. Defaults to the resource's `open_api.tag`. |
+| [`deprecated?`](#rest-routes-route-deprecated?){: #rest-routes-route-deprecated? } | `boolean` | `false` | Whether the OpenAPI operation is marked as deprecated. |
 | [`primary?`](#rest-routes-route-primary?){: #rest-routes-route-primary? } | `boolean` | `false` | Whether this is the route to link to by default for this kind of route. |
 | [`query_params`](#rest-routes-route-query_params){: #rest-routes-route-query_params } | `list(atom)` | `[]` | Action inputs (arguments or accepted attributes) to read from the query string. |
 | [`metadata`](#rest-routes-route-metadata){: #rest-routes-route-metadata } | `(any, any, any -> any)` |  | A function `fn subject, result, request -> map end` returning extra top-level metadata. |
@@ -438,6 +481,37 @@ route :get, "/stats", :stats, wrap_in_result?: true
 ### Introspection
 
 Target: `AshRest.Resource.Route`
+
+
+### rest.open_api
+Customize how the resource appears in the generated OpenAPI document.
+
+
+
+### Examples
+```
+open_api do
+  tag "Blog posts"
+  tag_description "Articles published on the blog."
+  schema_name "BlogPost"
+  description "A published or draft article."
+end
+
+```
+
+
+
+
+### Options
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`tag`](#rest-open_api-tag){: #rest-open_api-tag } | `String.t` |  | The tag of the resource's operations. Defaults to the resource `type`. |
+| [`tag_description`](#rest-open_api-tag_description){: #rest-open_api-tag_description } | `String.t` |  | A description of the tag, listed in the document's top-level `tags`. |
+| [`schema_name`](#rest-open_api-schema_name){: #rest-open_api-schema_name } | `String.t` |  | The component schema name of the resource, also used for its `<Name>List` and `<Name>Filter` schemas. Defaults to the camelized `type`, e.g. `"BlogPost"`. |
+| [`description`](#rest-open_api-description){: #rest-open_api-description } | `String.t` |  | The description of the resource schema. Defaults to the resource's `description`. |
+
+
 
 
 

@@ -312,6 +312,10 @@ Each route is one operation whose `operationId` is the route name (`"post.get"`,
 `"post.index"`, ...). Records, list wrappers, embedded resources, unions, filters and the error
 envelope are components under `#/components/schemas`.
 
+Summaries, descriptions, tags, schema names and parameter descriptions can be overridden per route
+and per resource, Ash `description`s flow in on their own, and `modify_open_api/1` on the router
+changes anything else. See [OpenAPI](documentation/topics/open-api.md).
+
 ## Testing
 
 `AshRest.Test` sends requests through a router with `Plug.Test` and asserts on the flat format.
@@ -343,6 +347,7 @@ end
 - [Routes](documentation/topics/routes.md)
 - [Filtering, sorting and pagination](documentation/topics/filtering-sorting-pagination.md)
 - [Errors](documentation/topics/errors.md)
+- [OpenAPI](documentation/topics/open-api.md)
 - [Resource DSL reference](documentation/dsls/DSL-AshRest.md)
 - [Domain DSL reference](documentation/dsls/DSL-AshRest.Domain.md)
 

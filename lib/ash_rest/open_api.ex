@@ -62,24 +62,79 @@ defmodule AshRest.OpenApi do
         {Map.update(paths, path, %{method => operation}, &Map.put(&1, method, operation)), reg}
       end)
 
-    %{
-      "openapi" => "3.1.0",
-      "info" => info(router),
-      "paths" => paths,
-      "components" => %{
-        "schemas" => Map.merge(Schema.schemas(reg), error_schemas()),
-        "responses" => error_response_components()
+    spec =
+      %{
+        "openapi" => "3.1.0",
+        "info" => info(router),
+        "paths" => paths,
+        "components" => %{
+          "schemas" => Map.merge(Schema.schemas(reg), error_schemas()),
+          "responses" => error_response_components()
+        }
       }
-    }
+      |> maybe_put("tags", tags(router, paths))
+
+    modify(router, spec)
+  end
+
+  # The router's `modify_open_api/1` runs last, on the finished document.
+  defp modify(router, spec) do
+    Code.ensure_loaded(router)
+
+    if function_exported?(router, :modify_open_api, 1),
+      do: router.modify_open_api(spec),
+      else: spec
   end
 
   defp info(router) do
     overrides =
       router.__ash_rest__(:open_api_info)
       |> Enum.reject(fn {_k, v} -> is_nil(v) end)
-      |> Map.new(fn {k, v} -> {to_string(k), v} end)
+      |> Map.new(fn {k, v} -> {camelize(k), info_value(v)} end)
 
     Map.merge(%{"title" => "AshRest API", "version" => "0.1.0"}, overrides)
+  end
+
+  # `contact: [name: "x", email: "y"]` -> `%{"contact" => %{"name" => "x", "email" => "y"}}`
+  defp info_value(value) when is_list(value) and value != [] do
+    if Keyword.keyword?(value),
+      do: Map.new(value, fn {k, v} -> {camelize(k), info_value(v)} end),
+      else: value
+  end
+
+  defp info_value(%{} = value) when not is_struct(value),
+    do: Map.new(value, fn {k, v} -> {camelize(k), info_value(v)} end)
+
+  defp info_value(value), do: value
+
+  # `:terms_of_service` -> `"termsOfService"`; strings are kept as given.
+  defp camelize(key) when is_atom(key) do
+    [first | rest] = key |> Atom.to_string() |> String.split("_")
+    Enum.join([first | Enum.map(rest, &String.capitalize/1)])
+  end
+
+  defp camelize(key), do: key
+
+  # One entry per tag used by an operation, described by the resource's
+  # `open_api.tag_description` when it declares one.
+  defp tags(router, paths) do
+    used =
+      for {_path, operations} <- paths,
+          {_method, operation} <- operations,
+          tag <- Map.get(operation, "tags", []),
+          into: MapSet.new(),
+          do: tag
+
+    descriptions =
+      for {_domain, resource, _route} <- RestManifest.routes(router),
+          description = Info.open_api_tag_description(resource),
+          into: %{},
+          do: {Info.open_api_tag(resource), description}
+
+    case Enum.sort(used) do
+      [] -> nil
+      names -> Enum.map(names, &maybe_put(%{"name" => &1}, "description", descriptions[&1]))
+    end
   end
 
   # `/posts/:id` -> `/posts/{id}`
@@ -129,13 +184,14 @@ defmodule AshRest.OpenApi do
     operation =
       %{
         "operationId" => route.name,
-        "tags" => [ctx.rest_type],
-        "summary" => summary(route, ctx.rest_type),
+        "tags" => route.tags || [Info.open_api_tag(resource)],
+        "summary" => route.summary || summary(route, ctx.rest_type),
         "parameters" => parameters,
         "responses" => responses
       }
       |> maybe_put("description", route.description || (ctx.action && ctx.action.description))
       |> maybe_put("requestBody", body)
+      |> maybe_put("deprecated", if(route.deprecated?, do: true))
 
     {operation, reg}
   end
@@ -200,9 +256,10 @@ defmodule AshRest.OpenApi do
         end
 
       description =
-        if name == "id",
-          do: "The #{pk} of the #{ctx.rest_type}.",
-          else: "Path parameter `#{name}`, merged into the action input."
+        parameter_description(ctx.route, name) ||
+          if name == "id",
+            do: "The #{pk} of the #{ctx.rest_type}.",
+            else: "Path parameter `#{name}`, merged into the action input."
 
       param = %{
         "name" => name,
@@ -420,8 +477,19 @@ defmodule AshRest.OpenApi do
     end)
   end
 
+  # A `parameter_descriptions` entry of the route, keyed by the DSL name
+  # (path parameter or `query_params` entry).
+  defp parameter_description(%Route{parameter_descriptions: descriptions}, name) do
+    Enum.find_value(descriptions, fn {key, description} ->
+      if to_string(key) == to_string(name), do: description
+    end)
+  end
+
   # The route's `query_params`, typed from the action inputs they feed.
-  defp query_parameters(reg, %{route: %Route{query_params: names}, res: res, action: action})
+  defp query_parameters(
+         reg,
+         %{route: %Route{query_params: names}, res: res, action: action} = ctx
+       )
        when is_list(names) and names != [] do
     inputs = action_inputs(res, action)
 
@@ -439,12 +507,19 @@ defmodule AshRest.OpenApi do
               "required" => input.required? == true,
               "schema" => if(input.allow_nil?, do: Schema.nullable(schema), else: schema)
             }
-            |> maybe_put("description", input.description)
+            |> maybe_put(
+              "description",
+              parameter_description(ctx.route, name) || input.description
+            )
 
           {param, reg}
 
         nil ->
-          {%{"name" => client, "in" => "query", "schema" => %{"type" => "string"}}, reg}
+          param =
+            %{"name" => client, "in" => "query", "schema" => %{"type" => "string"}}
+            |> maybe_put("description", parameter_description(ctx.route, name))
+
+          {param, reg}
       end
     end)
   end
@@ -475,10 +550,12 @@ defmodule AshRest.OpenApi do
         %{"type" => "object", "properties" => props, "additionalProperties" => false}
         |> put_required(required)
 
-      body = %{
-        "required" => required != [],
-        "content" => %{@json => %{"schema" => schema}}
-      }
+      body =
+        %{
+          "required" => required != [],
+          "content" => %{@json => %{"schema" => schema}}
+        }
+        |> maybe_put("description", route.request_body_description)
 
       {body, reg}
     end
@@ -537,7 +614,7 @@ defmodule AshRest.OpenApi do
 
     responses =
       Map.put(errors, status, %{
-        "description" => success_description(route),
+        "description" => route.response_description || success_description(route),
         "content" => %{@json => %{"schema" => success}}
       })
 

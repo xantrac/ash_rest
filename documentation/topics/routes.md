@@ -60,6 +60,12 @@ Every route kind takes these options:
 | `route` | depends on the kind | path relative to `base`; may contain `:param` segments |
 | `name` | `"<type>.<kind>"` | entrypoint name and OpenAPI `operationId`; unique per resource |
 | `description` | the action's description | OpenAPI operation description |
+| `summary` | generated | OpenAPI operation summary |
+| `request_body_description` | none | OpenAPI request body description |
+| `response_description` | generated | OpenAPI success response description |
+| `parameter_descriptions` | `[]` | OpenAPI descriptions of path params and `query_params` |
+| `tags` | the resource tag | OpenAPI operation tags |
+| `deprecated?` | `false` | marks the OpenAPI operation as deprecated |
 | `primary?` | `false` | marks the route to link to by default; informational in this version |
 | `query_params` | `[]` | action inputs read from the query string (see below) |
 | `metadata` | none | `fn subject, result, request -> map end`, see below |

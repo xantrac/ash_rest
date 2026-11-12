@@ -30,7 +30,26 @@ defmodule AshRest.Router do
     * `:error_handler` - an `AshRpc.ErrorHandler` module or `{m, f, a}` (called as
       `apply(m, f, [error, context | a])`) applied to every error. Defaults to the
       domain's `rest.error_handler`.
+
+  ## Customizing the OpenAPI document
+
+  Override `c:modify_open_api/1` to change the generated document after it is built,
+  e.g. to add servers or security schemes:
+
+      @impl AshRest.Router
+      def modify_open_api(spec) do
+        put_in(spec, ["components", "securitySchemes"], %{
+          "bearer" => %{"type" => "http", "scheme" => "bearer"}
+        })
+      end
   """
+
+  @doc """
+  Receives the generated OpenAPI document (a map with string keys) and returns the
+  document to serve. Runs last, after every DSL option has been applied. The default
+  returns the document unchanged.
+  """
+  @callback modify_open_api(spec :: map()) :: map()
 
   @oaskit? Code.ensure_loaded?(Oaskit)
 
@@ -39,6 +58,7 @@ defmodule AshRest.Router do
 
     quote bind_quoted: [opts: opts, oaskit?: oaskit?] do
       @behaviour Plug
+      @behaviour AshRest.Router
       use AshRpc.Profile
 
       @ash_rest_domains Keyword.fetch!(opts, :domains)
@@ -93,7 +113,10 @@ defmodule AshRest.Router do
       @impl Plug
       def call(conn, _opts), do: AshRest.Router.dispatch(conn, __MODULE__)
 
-      defoverridable error_handler: 1, show_raised_errors?: 1
+      @impl AshRest.Router
+      def modify_open_api(spec), do: spec
+
+      defoverridable error_handler: 1, show_raised_errors?: 1, modify_open_api: 1
     end
   end
 

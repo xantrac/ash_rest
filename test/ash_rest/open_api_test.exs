@@ -86,7 +86,7 @@ defmodule AshRest.OpenApiTest do
         op = operation(spec, path, Atom.to_string(route.method))
         assert op, "missing operation for #{route.method} #{path}"
         assert op["operationId"] == route.name
-        assert op["tags"] == [AshRest.Resource.Info.type(resource)]
+        assert op["tags"] == (route.tags || [AshRest.Resource.Info.open_api_tag(resource)])
         assert Map.has_key?(op["responses"], "400")
         assert Map.has_key?(op["responses"], "403")
         assert Map.has_key?(op["responses"], "500")
@@ -339,7 +339,12 @@ defmodule AshRest.OpenApiTest do
 
       assert body["required"] == ["title"]
       assert body["additionalProperties"] == false
-      assert body["properties"]["title"] == %{"type" => "string"}
+
+      assert body["properties"]["title"] == %{
+               "type" => "string",
+               "description" => "The headline of the post."
+             }
+
       assert body["properties"]["score"]["type"] == ["integer", "null"]
       assert body["properties"]["status"]["enum"] == ["draft", "published", nil]
 
@@ -392,10 +397,10 @@ defmodule AshRest.OpenApiTest do
   describe "related" do
     test "to-many returns the destination list and scopes include to the subtree", %{spec: spec} do
       assert response_schema(spec, "/posts/{id}/comments", "get", "200") ==
-               %{"$ref" => "#/components/schemas/CommentList"}
+               %{"$ref" => "#/components/schemas/BlogCommentList"}
 
       assert parameter(spec, "/posts/{id}/comments", "get", "filter")["schema"] ==
-               %{"$ref" => "#/components/schemas/CommentFilter"}
+               %{"$ref" => "#/components/schemas/BlogCommentFilter"}
 
       assert parameter(spec, "/posts/{id}/comments", "get", "include")["description"] =~
                "`author`"
@@ -525,7 +530,7 @@ defmodule AshRest.OpenApiTest do
       assert %{"anyOf" => [%{"$ref" => "#/components/schemas/Author"}, %{"type" => "null"}]} =
                props["author"]
 
-      assert %{"type" => "array", "items" => %{"$ref" => "#/components/schemas/Comment"}} =
+      assert %{"type" => "array", "items" => %{"$ref" => "#/components/schemas/BlogComment"}} =
                props["comments"]
 
       refute Map.has_key?(props, "inserted_at")
@@ -537,7 +542,7 @@ defmodule AshRest.OpenApiTest do
       # destroy, so it cannot be required.
       assert Enum.sort(schema_of(spec, "Post")["required"]) == ~w(created_at id title type)
       assert Enum.sort(schema_of(spec, "Note")["required"]) == ~w(id title type)
-      assert Enum.sort(schema_of(spec, "Comment")["required"]) == ~w(body id type)
+      assert Enum.sort(schema_of(spec, "BlogComment")["required"]) == ~w(body id type)
     end
 
     test "embedded resources are plain objects without a type", %{spec: spec} do

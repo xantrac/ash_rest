@@ -589,7 +589,8 @@ defmodule AshRest.OpenApi.Schema do
 
     schema = %{
       "type" => "object",
-      "description" => res.description || "A #{rest_type} record.",
+      "description" =>
+        Info.open_api_description(module) || res.description || "A #{rest_type} record.",
       "required" => required,
       "properties" =>
         %{"type" => %{"const" => rest_type, "description" => "The resource type."}}
@@ -668,19 +669,31 @@ defmodule AshRest.OpenApi.Schema do
     end
   end
 
-  # Component names are unique per key; a clash with another key falls back
-  # to the full module path.
+  # Component names are unique per key. Two exposed resources resolving to
+  # the same name is a configuration error; any other clash falls back to the
+  # full module path.
   defp component_name(reg, key, preferred) do
     case Map.get(reg.names, preferred) do
-      nil -> preferred
-      ^key -> preferred
-      _ -> key |> elem(1) |> inspect() |> String.replace(~r/[^A-Za-z0-9]/, "")
+      nil ->
+        preferred
+
+      ^key ->
+        preferred
+
+      {:resource, other} when elem(key, 0) == :resource ->
+        raise ArgumentError,
+              "#{inspect(elem(key, 1))} and #{inspect(other)} both use the OpenAPI schema name " <>
+                "#{inspect(preferred)}. Set a distinct `open_api do schema_name ... end` " <>
+                "in the `rest` section of one of them."
+
+      _ ->
+        key |> elem(1) |> inspect() |> String.replace(~r/[^A-Za-z0-9]/, "")
     end
   end
 
   defp type_name(module) when is_atom(module) do
     if Info.rest_extension?(module) do
-      module |> type_string() |> Macro.camelize()
+      Info.open_api_schema_name(module)
     else
       module |> Module.split() |> List.last()
     end

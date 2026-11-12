@@ -13,6 +13,10 @@ defmodule AshRest.TestApp.Post do
     private? true
   end
 
+  resource do
+    description "A blog post."
+  end
+
   rest do
     type "post"
     base "/posts"
@@ -24,11 +28,23 @@ defmodule AshRest.TestApp.Post do
       index :read
       index :keyset, route: "/keyset", name: "post.keyset"
       index :offset, route: "/offset", name: "post.offset"
-      post :create
+      post :create, request_body_description: "The post to create."
       patch :update
       delete :destroy
       related :comments, :read
-      route :post, "/:id/publish", :publish
+
+      route :post, "/:id/publish", :publish do
+        summary "Publish a post"
+
+        description """
+        Marks the post as published and stamps `published_by`.
+        Publishing an already published post is a no-op.
+        """
+
+        response_description "The published post, with `meta.published_by`."
+        parameter_descriptions id: "The post's UUID"
+      end
+
       route :get, "/word_count", :word_count, query_params: [:text]
       route :post, "/stats", :stats, wrap_in_result?: true
       route :post, "/ping", :ping
@@ -37,7 +53,12 @@ defmodule AshRest.TestApp.Post do
 
   attributes do
     uuid_primary_key :id
-    attribute :title, :string, public?: true, allow_nil?: false
+
+    attribute :title, :string,
+      public?: true,
+      allow_nil?: false,
+      description: "The headline of the post."
+
     attribute :body, :string, public?: true
 
     attribute :status, :atom,
@@ -102,7 +123,8 @@ defmodule AshRest.TestApp.Post do
     end
 
     action :word_count, :integer do
-      argument :text, :string, allow_nil?: false
+      description "Counts the words in a text."
+      argument :text, :string, allow_nil?: false, description: "The text to count words in."
       run fn input, _ -> {:ok, input.arguments.text |> String.split() |> length()} end
     end
 

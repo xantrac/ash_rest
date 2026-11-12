@@ -20,9 +20,22 @@ defmodule AshRest.TestApp.Comment do
 
     routes do
       get :read
-      index :read
+
+      index :read do
+        summary "List comments"
+        tags ["Comments", "Moderation"]
+        deprecated? true
+      end
+
       post :create
       related :author, :read
+    end
+
+    open_api do
+      tag "Comments"
+      tag_description "Reader comments on posts."
+      schema_name "BlogComment"
+      description "A reader's comment on a post."
     end
   end
 

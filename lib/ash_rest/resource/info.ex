@@ -75,6 +75,36 @@ defmodule AshRest.Resource.Info do
   def include_nil_values?(resource),
     do: Extension.get_opt(resource, [:rest], :include_nil_values?, true)
 
+  @doc "The OpenAPI tag of the resource's operations. Defaults to `type/1`."
+  @spec open_api_tag(resource()) :: String.t()
+  def open_api_tag(resource),
+    do: Extension.get_opt(resource, [:rest, :open_api], :tag, nil) || type(resource)
+
+  @doc "The description of the resource's OpenAPI tag, or `nil`."
+  @spec open_api_tag_description(resource()) :: String.t() | nil
+  def open_api_tag_description(resource),
+    do: Extension.get_opt(resource, [:rest, :open_api], :tag_description, nil)
+
+  @doc """
+  The OpenAPI component schema name of the resource. Defaults to the camelized
+  `type/1`, e.g. `"blog_post"` -> `"BlogPost"`.
+  """
+  @spec open_api_schema_name(resource()) :: String.t()
+  def open_api_schema_name(resource) do
+    Extension.get_opt(resource, [:rest, :open_api], :schema_name, nil) ||
+      resource |> type() |> Macro.camelize()
+  end
+
+  @doc """
+  The description of the resource's OpenAPI schema: `open_api.description`, else the
+  Ash resource `description`, else `nil`.
+  """
+  @spec open_api_description(resource()) :: String.t() | nil
+  def open_api_description(resource) do
+    Extension.get_opt(resource, [:rest, :open_api], :description, nil) ||
+      Ash.Resource.Info.description(resource)
+  end
+
   @doc "Whether `resource` is an Ash resource using the `AshRest` extension."
   @spec rest_extension?(term()) :: boolean()
   def rest_extension?(resource) when is_map(resource), do: AshRest in Spark.extensions(resource)

@@ -36,6 +36,11 @@ First version: a flat, Stripe-style REST API for Ash resources, built on `ash_rp
   a Redoc page at `/docs`, and an `oaskit` spec module per router (`<Router>.OpenApi`) for
   `mix openapi.dump` and response validation.
 - `AshRest.Test` request and assertion helpers, with optional OpenAPI response validation.
+- OpenAPI customization: route `summary`, `request_body_description`, `response_description`,
+  `parameter_descriptions`, `tags` and `deprecated?`; a resource `open_api` section with `tag`,
+  `tag_description`, `schema_name` and `description`; top-level `tags`; camelized and nested
+  `open_api_info` keys (`terms_of_service`, `contact`, `license`); and an overridable
+  `modify_open_api/1` router callback. Route descriptions fall back to the Ash action's.
 
 ### Fixed
 

@@ -55,6 +55,7 @@ defmodule AshRest.MixProject do
         "documentation/topics/routes.md",
         "documentation/topics/filtering-sorting-pagination.md",
         "documentation/topics/errors.md",
+        "documentation/topics/open-api.md",
         {"documentation/dsls/DSL-AshRest.md", search_data: Spark.Docs.search_data_for(AshRest)},
         {"documentation/dsls/DSL-AshRest.Domain.md",
          search_data: Spark.Docs.search_data_for(AshRest.Domain)},

@@ -972,4 +972,76 @@ defmodule AshRest.DslTest do
       end
     end
   end
+
+  describe "VerifyOpenApi" do
+    test "rejects an invalid schema_name" do
+      error =
+        assert_dsl_error %Spark.Error.DslError{path: [:rest, :open_api, :schema_name]} do
+          defmodule Elixir.AshRest.DslTest.BadSchemaName do
+            use Ash.Resource, domain: nil, data_layer: Ash.DataLayer.Ets, extensions: [AshRest]
+
+            rest do
+              base "/x"
+
+              routes do
+                index :read
+              end
+
+              open_api do
+                schema_name "Bad Name!"
+              end
+            end
+
+            attributes do
+              uuid_primary_key :id
+            end
+
+            actions do
+              defaults [:read]
+            end
+          end
+        end
+
+      assert error.message =~ "not a valid OpenAPI component name"
+    end
+
+    test "rejects parameter_descriptions for unknown parameters" do
+      error =
+        assert_dsl_error %Spark.Error.DslError{path: [:rest, :routes]} do
+          defmodule Elixir.AshRest.DslTest.UnknownParameter do
+            use Ash.Resource, domain: nil, data_layer: Ash.DataLayer.Ets, extensions: [AshRest]
+
+            rest do
+              base "/x"
+
+              routes do
+                get :read, parameter_descriptions: [id: "The id", nope: "Not a parameter"]
+              end
+            end
+
+            attributes do
+              uuid_primary_key :id
+            end
+
+            actions do
+              defaults [:read]
+            end
+          end
+        end
+
+      assert error.message =~ ":nope"
+      assert error.message =~ "`id`"
+    end
+
+    test "Info helpers apply defaults" do
+      assert Info.open_api_tag(AshRest.TestApp.Post) == "post"
+      assert Info.open_api_schema_name(AshRest.TestApp.Post) == "Post"
+      assert Info.open_api_description(AshRest.TestApp.Post) == "A blog post."
+      assert Info.open_api_tag_description(AshRest.TestApp.Post) == nil
+
+      assert Info.open_api_tag(AshRest.TestApp.Comment) == "Comments"
+      assert Info.open_api_schema_name(AshRest.TestApp.Comment) == "BlogComment"
+      assert Info.open_api_tag_description(AshRest.TestApp.Comment) == "Reader comments on posts."
+    end
+  end
 end

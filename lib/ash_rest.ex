@@ -22,7 +22,36 @@ defmodule AshRest do
     ],
     description: [
       type: :string,
-      doc: "A description of the route for generated docs. Defaults to the action description."
+      doc: "The OpenAPI operation description (markdown). Defaults to the action's `description`."
+    ],
+    summary: [
+      type: :string,
+      doc:
+        "The OpenAPI operation summary, a short one-line title. Defaults to a generated one, e.g. `\"Fetch a post\"`."
+    ],
+    request_body_description: [
+      type: :string,
+      doc: "The OpenAPI description of the request body, for routes that accept one."
+    ],
+    response_description: [
+      type: :string,
+      doc:
+        "The OpenAPI description of the success response. Defaults to a generated one, e.g. `\"The created record.\"`."
+    ],
+    parameter_descriptions: [
+      type: {:list, {:tuple, [:atom, :string]}},
+      default: [],
+      doc:
+        "OpenAPI descriptions of path parameters and `query_params`, e.g. `[id: \"The post's UUID\"]`. Query parameters default to the input's `description`."
+    ],
+    tags: [
+      type: {:list, :string},
+      doc: "The OpenAPI tags of the operation. Defaults to the resource's `open_api.tag`."
+    ],
+    deprecated?: [
+      type: :boolean,
+      default: false,
+      doc: "Whether the OpenAPI operation is marked as deprecated."
     ],
     primary?: [
       type: :boolean,
@@ -201,6 +230,40 @@ defmodule AshRest do
     entities: [@get, @index, @post, @patch, @delete, @related, @route]
   }
 
+  @open_api %Spark.Dsl.Section{
+    name: :open_api,
+    describe: "Customize how the resource appears in the generated OpenAPI document.",
+    examples: [
+      """
+      open_api do
+        tag "Blog posts"
+        tag_description "Articles published on the blog."
+        schema_name "BlogPost"
+        description "A published or draft article."
+      end
+      """
+    ],
+    schema: [
+      tag: [
+        type: :string,
+        doc: "The tag of the resource's operations. Defaults to the resource `type`."
+      ],
+      tag_description: [
+        type: :string,
+        doc: "A description of the tag, listed in the document's top-level `tags`."
+      ],
+      schema_name: [
+        type: :string,
+        doc:
+          "The component schema name of the resource, also used for its `<Name>List` and `<Name>Filter` schemas. Defaults to the camelized `type`, e.g. `\"BlogPost\"`."
+      ],
+      description: [
+        type: :string,
+        doc: "The description of the resource schema. Defaults to the resource's `description`."
+      ]
+    ]
+  }
+
   @rest %Spark.Dsl.Section{
     name: :rest,
     describe: "Configure how the resource is exposed in the REST API.",
@@ -220,7 +283,7 @@ defmodule AshRest do
       end
       """
     ],
-    sections: [@routes],
+    sections: [@routes, @open_api],
     schema: [
       type: [
         type: :string,
@@ -284,14 +347,18 @@ defmodule AshRest do
   for domain-wide options.
   """
 
+  # The generated DSL modules live under `AshRest.Dsl`, so the `open_api`
+  # section doesn't clash with `AshRest.OpenApi`.
   use Spark.Dsl.Extension,
+    module_prefix: AshRest.Dsl,
     sections: [@rest],
     transformers: [AshRest.Resource.Transformers.SetRouteDefaults],
     verifiers: [
       AshRest.Resource.Verifiers.VerifyActions,
       AshRest.Resource.Verifiers.VerifyIncludes,
       AshRest.Resource.Verifiers.VerifyNoOverlappingRoutes,
-      AshRest.Resource.Verifiers.VerifyPrimaryKey
+      AshRest.Resource.Verifiers.VerifyPrimaryKey,
+      AshRest.Resource.Verifiers.VerifyOpenApi
     ]
 
   @doc false
